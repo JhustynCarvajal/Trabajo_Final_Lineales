@@ -10,54 +10,48 @@ t_max = 1        # Tiempo máximo de la simulación (en segundos)
 def x_t(t):
     return A1 * np.sin(omega1 * t)
 
-
 # Tiempo continuo para la señal
 t_cont = np.linspace(0, t_max, 1000)
 x_cont = x_t(t_cont)
 
-# Escenario 1: Muestreo suficiente
-Ts_suf = 1 / (10 * omega1 / (2 * np.pi))  # Ts = 1/(10*frecuencia)
-t_suf = np.arange(0, t_max, Ts_suf)
-x_suf = x_t(t_suf)
+# Función para calcular el tiempo y señal muestreada
+def calcular_muestreo(factor):
+    '''
+    t_muestreo es el tren de impulsos
+    x_muestreo es la señal muestreda
+    '''
+    Ts = 1 / (factor * omega1 / (2 * np.pi))
+    t_muestreo = np.arange(0, t_max, Ts)
+    x_muestreo = x_t(t_muestreo)
+    return t_muestreo, x_muestreo
 
-# Escenario 2: Muestreo ajustado
-Ts_adj = 1 / (2 * omega1 / (2 * np.pi) + 0.1)  # Ts = 1/(2*frecuencia + 0.1)
-t_adj = np.arange(0, t_max, Ts_adj)
-x_adj = x_t(t_adj)
+# Escenarios de muestreo
+factores = [10, 2 + 0.1/(omega1/(2 * np.pi)), 0.5]
+muestreos = [calcular_muestreo(f) for f in factores]
 
-# Escenario 3: Muestreo insuficiente
-Ts_insuf = 1 / (0.5 * omega1 / (2 * np.pi))  # Ts = 1/(0.5*frecuencia)
-t_insuf = np.arange(0, t_max, Ts_insuf)
-x_insuf = x_t(t_insuf)
+# Crear la figura y los subplots
+fig, axs = plt.subplots(3, 2, figsize=(12, 10))
 
-plt.figure(figsize=(12, 8))
+# Títulos y colores para los escenarios
+titulos = ['Muestreo Suficiente', 'Muestreo Ajustado', 'Muestreo Insuficiente']
+colores = ['ro', 'go', 'bo']
 
-# Escenario 1: Muestreo suficiente
-plt.subplot(3, 1, 1)
-plt.plot(t_cont, x_cont, label='Señal Continua', color='blue')
-plt.stem(t_suf, x_suf, linefmt='--', markerfmt='ro', basefmt='r-', label='Muestreo Suficiente')
-plt.title('Muestreo Suficiente')
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Amplitud')
-plt.legend()
+for i, (t_muestreo, x_muestreo) in enumerate(muestreos):
+    # Graficar la señal muestreada
+    axs[i, 1].plot(t_cont, x_cont, label='Señal Continua', color='blue')
+    axs[i, 1].stem(t_muestreo, x_muestreo, linefmt='--', markerfmt=colores[i], basefmt='-', label=titulos[i])
+    axs[i, 1].set_title(titulos[i])
+    axs[i, 1].set_xlabel('Tiempo (s)')
+    axs[i, 1].set_ylabel('Amplitud')
+    axs[i, 1].legend(loc='lower right')
 
-# Escenario 2: Muestreo ajustado
-plt.subplot(3, 1, 2)
-plt.plot(t_cont, x_cont, label='Señal Continua', color='blue')
-plt.stem(t_adj, x_adj, linefmt='--', markerfmt='go', basefmt='g-', label='Muestreo Ajustado')
-plt.title('Muestreo Ajustado')
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Amplitud')
-plt.legend()
-
-# Escenario 3: Muestreo insuficiente
-plt.subplot(3, 1, 3)
-plt.plot(t_cont, x_cont, label='Señal Continua', color='blue')
-plt.stem(t_insuf, x_insuf, linefmt='--', markerfmt='bo', basefmt='b-', label='Muestreo Insuficiente')
-plt.title('Muestreo Insuficiente')
-plt.xlabel('Tiempo (s)')
-plt.ylabel('Amplitud')
-plt.legend()
+    # Graficar el tren de pulsos
+    axs[i, 0].stem(t_muestreo, np.ones_like(t_muestreo), linefmt='--', markerfmt=colores[i], basefmt='-', label=f'Tren de Pulsos {titulos[i]}')
+    axs[i, 0].set_title(f'Tren de Pulsos {titulos[i]}')
+    axs[i, 0].set_xlabel('Tiempo (s)')
+    axs[i, 0].set_ylabel('Amplitud')
+    axs[i, 0].legend(loc='upper right')
 
 plt.tight_layout()
+plt.subplots_adjust(hspace=0.5)  # Aumentar el espacio vertical entre los gráficos
 plt.show()
