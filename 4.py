@@ -72,7 +72,7 @@ class AudioProcessorApp:
         self.root.title("Procesador de Audio")
         
         # Establecer el tamaño de la ventana
-        self.root.geometry("400x100")  # Ancho x Alto
+        self.root.geometry("400x150")  # Ancho x Alto
         
         self.filepath = None
         
