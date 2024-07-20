@@ -1,78 +1,103 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
-from scipy.fft import fft, fftfreq, ifft
+from scipy.fft import ifft, fftshift
 
-# Definir el pulso unitario
-def x_t(t, tau):
-    return np.where(np.abs(t) <= tau / 2, 1, 0)
+def fsinc(x):
+    """Función sinc normalizada."""
+    return np.sinc(x / np.pi)
 
-# Valores de tiempo
-t = np.linspace(-3, 3, 1000)  # Aumentar el rango de tiempo para mejor visualización
+def calcular_banda_esencial(tau, beta, tol):
+    """
+    Calcular la banda esencial que contiene beta% de la energía total de la señal.
+
+    Args:
+        tau (float): Parámetro de la función sinc.
+        beta (float): Proporción de la energía total que queremos contener (entre 0 y 1).
+        tol (float): Tolerancia para la convergencia del cálculo.
+
+    Returns:
+        tuple: (W, energia_W) donde W es la banda esencial y energia_W es la energía en la banda W.
+    """
+    # Definir la función sinc
+    f_sinc = lambda x: np.sinc(x / np.pi)
+
+    # Definimos la función de la transformada de Fourier
+    f = lambda omega, tau: tau * f_sinc(omega * tau / 2)
+
+    # Definir la función X_cuadrada
+    X_cuadrada = lambda omega, tau: np.real(np.abs(f(omega, tau)) ** 2)
+
+    # Calcular la energía total de x(t)
+    E = beta * tau
+
+    # Inicializar variables
+    W = 0
+    step = 2 * np.pi / tau
+    relerr = np.inf  # Inicializar con un valor grande
+
+    # Iteración para encontrar la banda esencial
+    while abs(relerr) > tol:
+        # Calcular la energía en la banda W
+        energia_W, _ = quad(lambda omega: X_cuadrada(omega, tau) / (2 * np.pi), -W, W)
+
+        # Actualizar el error relativo
+        relerr = (E - energia_W) / E
+
+        # Ajustar W y step según el error relativo
+        if relerr > 0:
+            W += step
+        else:
+            step /= 2
+            W -= step
+
+    return W, energia_W
+
+def calcular_energia(tau):
+    """
+    Calcular la energía total de la señal x(t) para un valor dado de tau.
+
+    Args:
+        tau (float): Parámetro de la función sinc.
+
+    Returns:
+        float: Energía total de la señal.
+    """
+    X_cuadrado = lambda omega: (tau * fsinc(omega * tau / 2)) ** 2
+    Energy, _ = quad(X_cuadrado, -800, 800)
+    return Energy
+
+# Parámetros de prueba
 tau = 1
-
-# Graficar el pulso unitario
-plt.plot(t, x_t(t, tau))
-plt.title(f'Pulso unitario de duración τ={tau}')
-plt.xlabel('t')
-plt.ylabel('x(t)')
-plt.grid(True)
-plt.show()
-
-#===========Energia de la señal==================
-# Calcular la energía de la señal
-def energia_x_t(tau):
-    integrando = lambda t: x_t(t, tau)**2
-    energia, _ = quad(integrando, -tau/2, tau/2)
-    return energia
-
-# Calcular y mostrar la energía para τ=1
-energia = energia_x_t(tau)
-print(f'Energía de x(t) para τ={tau}: {energia}')
-
-#========Probar con otros valores de τ=============
-taus = [1.5, 2, 3]
-for tau in taus:
-    energia = energia_x_t(tau)
-    print(f'Energía de x(t) para τ={tau}: {energia}')
-
-
-#============Banda Esencial=========================
-# Transformada de Fourier de la señal
-def X_omega(t, tau):
-    X_f = fft(x_t(t, tau))
-    freqs = fftfreq(t.size, t[1] - t[0])
-    return X_f, freqs
+beta = 0.95
+tol = 1e-6
 
 # Calcular la banda esencial
-def banda_esencial(X_f, freqs, porcentaje=0.95):
-    energia_total = np.sum(np.abs(X_f)**2)
-    energia_acumulada = np.cumsum(np.abs(X_f)**2)
-    idx = np.where(energia_acumulada >= porcentaje * energia_total)[0][0]
-    banda = np.abs(freqs[idx])
-    return banda
+W, energia_W = calcular_banda_esencial(tau, beta, tol)
+print(f'Banda esencial que contiene el {beta * 100:.2f}% de la energía para tau = {tau} es {W:.4f} rad/s')
 
-# Calcular y mostrar la banda esencial para τ=1
-X_f, freqs = X_omega(t, tau)
-banda = banda_esencial(X_f, freqs)
-print(f'Banda esencial para τ={tau}: {banda}')
+# Graficar la señal x(t) reconstruida usando la banda esencial encontrada
+omega = np.linspace(-4 * np.pi, 4 * np.pi, 200)
+X = lambda omega: tau * fsinc(omega * tau / 2)
 
+# Reconstruir la señal en el tiempo usando la transformada inversa de Fourier
+t = np.linspace(-10, 10, 1000)
+x_reconstruida = np.zeros_like(t)
+for i in range(len(t)):
+    integrand = lambda omega: np.real(X(omega) * np.exp(1j * omega * t[i]))
+    x_reconstruida[i], _ = quad(integrand, -W, W)
 
-#===============Grafica Reconstruida==================
-# Graficar la señal reconstruida a partir de la banda esencial
-def señal_reconstruida(t, tau, banda):
-    X_f, freqs = X_omega(t, tau)
-    X_f[freqs > banda] = 0  # Filtrar frecuencias fuera de la banda esencial
-    x_reconstruida = ifft(X_f)
-    return np.real(x_reconstruida)
-
-# Calcular y graficar la señal reconstruida 
-x_rec = señal_reconstruida(t, tau, banda)
-plt.plot(t, x_rec, label='Señal reconstruida')
-plt.plot(t, x_t(t, tau), label='Señal original', linestyle='dashed')
-plt.title('Señal reconstruida a partir de la banda esencial')
-plt.xlabel('t')
-plt.ylabel('x_hat(t)')
-plt.legend()
+# Graficar la señal reconstruida
+plt.figure(figsize=(12, 6))
+plt.plot(t, x_reconstruida, 'b', linewidth=2)
 plt.grid(True)
+plt.xlabel('Tiempo (t)')
+plt.ylabel('x(t)')
+plt.title('Señal reconstruida a partir de la banda esencial')
 plt.show()
+
+# Prueba de cálculo de energía para diferentes valores de tau
+tau_valores = [2, 3, 5]
+for tau in tau_valores:
+    energia = calcular_energia(tau)
+    print(f'Energía de la señal para tau = {tau} es {energia:.4f}')

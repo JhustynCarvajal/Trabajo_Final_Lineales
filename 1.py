@@ -9,7 +9,7 @@ def espectro_frecuencia(tau, omega):
 taus = [1, 2, 0.5]
 
 # Valores de omega
-omega = np.linspace(-10, 10, 400)
+omega = np.linspace(-15, 15, 1000)
 
 plt.figure(figsize=(12, 8))
 
