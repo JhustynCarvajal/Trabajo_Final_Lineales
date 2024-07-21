@@ -15,11 +15,7 @@ t_cont = np.linspace(0, t_max, 1000)
 x_cont = x_t(t_cont)
 
 # Función para calcular el tiempo y señal muestreada
-def calcular_muestreo(factor):
-    '''
-    t_muestreo es el tren de impulsos
-    x_muestreo es la señal muestreda
-    '''
+def tren_impulso_muestreos(factor, t_max):
     Ts = 1 / (factor * omega1 / (2 * np.pi))
     t_muestreo = np.arange(0, t_max, Ts)
     x_muestreo = x_t(t_muestreo)
@@ -27,7 +23,7 @@ def calcular_muestreo(factor):
 
 # Escenarios de muestreo
 factores = [10, 2 + 0.1/(omega1/(2 * np.pi)), 0.5]
-muestreos = [calcular_muestreo(f) for f in factores]
+muestreos = [tren_impulso_muestreos(f,t_max) for f in factores]
 
 # Crear la figura y los subplots
 fig, axs = plt.subplots(3, 2, figsize=(12, 10))
@@ -50,8 +46,12 @@ for i, (t_muestreo, x_muestreo) in enumerate(muestreos):
     axs[i, 0].set_title(f'Tren de Pulsos {titulos[i]}')
     axs[i, 0].set_xlabel('Tiempo (s)')
     axs[i, 0].set_ylabel('Amplitud')
-    axs[i, 0].legend(loc='upper right')
+    axs[i, 0].legend(loc='lower right')
 
 plt.tight_layout()
 plt.subplots_adjust(hspace=0.5)  # Aumentar el espacio vertical entre los gráficos
 plt.show()
+
+
+
+

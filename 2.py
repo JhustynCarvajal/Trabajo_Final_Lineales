@@ -2,22 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
 
-def fsinc(x):
-    """Función sinc normalizada."""
-    return np.sinc(x / np.pi)
 
 def calcular_banda_esencial(tau, beta, tol):
-    """
-    Calcular la banda esencial que contiene beta% de la energía total de la señal.
 
-    Args:
-        tau (float): Parámetro de la función sinc.
-        beta (float): Proporción de la energía total que queremos contener (entre 0 y 1).
-        tol (float): Tolerancia para la convergencia del cálculo.
-
-    Returns:
-        tuple: (W, energia_W) donde W es la banda esencial y energia_W es la energía en la banda W.
-    """
     # Definir la función sinc
     f_sinc = lambda x: np.sinc(x / np.pi)
 
@@ -53,16 +40,8 @@ def calcular_banda_esencial(tau, beta, tol):
     return W, energia_W
 
 def calcular_energia(tau):
-    """
-    Calcular la energía total de la señal x(t) para un valor dado de tau.
 
-    Args:
-        tau (float): Parámetro de la función sinc.
-
-    Returns:
-        float: Energía total de la señal.
-    """
-    X_cuadrado = lambda omega: (tau * fsinc(omega * tau / 2)) ** 2
+    X_cuadrado = lambda omega: abs(tau * np.sinc(omega * tau / 2)) ** 2
     Energy, _ = quad(X_cuadrado, -800, 800)
     return Energy
 
@@ -77,7 +56,7 @@ print(f'Banda esencial que contiene el {beta * 100:.2f}% de la energía para tau
 
 # Graficar la señal x(t) reconstruida usando la banda esencial encontrada
 omega = np.linspace(-4 * np.pi, 4 * np.pi, 200)
-X = lambda omega: tau * fsinc(omega * tau / 2)
+X = lambda omega: tau * np.sinc(omega * tau / 2)
 
 # Reconstruir la señal en el tiempo usando la transformada inversa de Fourier
 t = np.linspace(-10, 10, 1000)

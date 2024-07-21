@@ -1,3 +1,4 @@
+Instalar los requerimeintos en un entorno virtual aislado para no afectar al Python del sistema 
 
 # Crear un entorno virtual
 
@@ -7,6 +8,6 @@
 
     pip install -r requirements.txt
 
-# Lista de Requerimientos 
+# Crear la lista de Requerimientos 
     
     pip freeze > requirements.txt
